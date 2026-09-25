@@ -42,7 +42,11 @@ Prerequisites: Node 24 and npm, on macOS or Linux. No other setup.
 | `npx vp run -r go > out.log 2>&1` | passes: a regular file never returns `EAGAIN` |
 | `npx vp run -r go` in a terminal | passes: a TTY drains immediately |
 
-**Other versions:** `npm install vite-plus@0.2.9` (or `@0.3.3`, `@1.0.0-rc.0`), then repeat steps 2–4.
+**Other versions:** install one cleanly, then repeat steps 2–4. npm cannot downgrade in place because of a vitest peer conflict:
+
+```sh
+rm -rf node_modules package-lock.json && npm install -D vite-plus@0.2.9   # or 0.3.3, 1.0.0-rc.0
+```
 
 ## Results (macOS 26.5 arm64, Node 24.21, 3 runs each)
 
