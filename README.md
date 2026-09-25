@@ -9,16 +9,40 @@ Two workspace packages, both with a `go` task:
 
 When vp's stdout is a pipe whose reader lags, forwarding `noisy`'s output fails with `EAGAIN` and vp kills the run.
 
-## Run it
+## Reproduce locally
 
-```sh
-npm install
-date +%s%N > packages/noisy/seed.txt
-npx vp run -r go 2>&1 | (sleep 5; cat > /dev/null)   # a reader that lags, like a CI log pipe
-npx vp run --last-details
-```
+Prerequisites: Node 24 and npm, on macOS or Linux. No other setup.
 
-Expected: `✗ Error: Failed to forward task process output: Resource temporarily unavailable (os error 35)` on macOS (`os error 11` on Linux), and `holder` killed with exit code 137.
+1. Clone and install:
+   ```sh
+   git clone https://github.com/korya/vp-eagain-repro.git
+   cd vp-eagain-repro
+   npm install
+   ```
+2. Force a cache miss for `noisy`. vp only forwards the output of a task it runs, not one it replays from cache:
+   ```sh
+   date +%s%N > packages/noisy/seed.txt
+   ```
+3. Run both tasks with a stdout reader that lags, like a CI log pipe. The `sleep` stands in for the lagging reader:
+   ```sh
+   npx vp run -r go 2>&1 | (sleep 5; cat > /dev/null)
+   ```
+4. Read the result:
+   ```sh
+   npx vp run --last-details
+   ```
+
+**Expected:** one task shows `✗ Error: Failed to forward task process output: Resource temporarily unavailable (os error 35)` (macOS; `os error 11` on Linux), and `holder#go` shows `✗ (exit code: 137)`. Repeat steps 2–4 to see it again; it failed every time for us.
+
+**Controls**, each after a fresh step 2:
+
+| Command | Result |
+|---|---|
+| `npx vp run --filter noisy go 2>&1 \| (sleep 5; cat > /dev/null)` | passes: no stdout-inheriting Node task |
+| `npx vp run -r go > out.log 2>&1` | passes: a regular file never returns `EAGAIN` |
+| `npx vp run -r go` in a terminal | passes: a TTY drains immediately |
+
+**Other versions:** `npm install vite-plus@0.2.9` (or `@0.3.3`, `@1.0.0-rc.0`), then repeat steps 2–4.
 
 ## Results (macOS 26.5 arm64, Node 24.21, 3 runs each)
 
