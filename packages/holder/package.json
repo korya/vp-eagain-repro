@@ -1,0 +1,6 @@
+{
+  "name": "holder",
+  "private": true,
+  "type": "module",
+  "scripts": { "go": "node holder.mjs" }
+}

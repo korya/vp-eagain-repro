@@ -1,0 +1,32 @@
+name: repro
+on: [push, workflow_dispatch]
+jobs:
+  runner-pipe:
+    # How does the Actions log reader drain a step's stdout?
+    runs-on: ${{ matrix.os }}
+    strategy: { fail-fast: false, matrix: { os: [ubuntu-latest, ubuntu-24.04-arm] } }
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/pipe-probe.py
+  vp:
+    # The bug, with the Actions log reader as the only reader (no artificial slowdown).
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: { os: [ubuntu-latest, ubuntu-24.04-arm], vp: ['0.2.9', '0.3.3', '1.0.0-rc.0'] }
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm install --no-audit --no-fund && npm install --no-audit --no-fund vite-plus@${{ matrix.vp }}
+      - name: vp run -r go (x5)
+        run: |
+          fails=0
+          for i in 1 2 3 4 5; do
+            date +%s%N > packages/noisy/seed.txt
+            npx vp run -r go || true
+            if npx vp run --last-details 2>&1 | grep -q 'Failed to forward task process output'; then fails=$((fails+1)); fi
+          done
+          echo "vp ${{ matrix.vp }} on ${{ matrix.os }}: $fails/5 runs hit 'Failed to forward task process output'" | tee -a "$GITHUB_STEP_SUMMARY"
