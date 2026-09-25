@@ -27,7 +27,7 @@ jobs:
           fails=0
           for i in 1 2 3 4 5; do
             date +%s%N > packages/noisy/seed.txt
-            npx vp run -r go || true
-            if npx vp run --last-details 2>&1 | grep -q 'Failed to forward task process output'; then fails=$((fails+1)); fi
+            ./node_modules/.bin/vp run -r go || true
+            if ./node_modules/.bin/vp run --last-details 2>&1 | grep -q 'Failed to forward task process output'; then fails=$((fails+1)); fi
           done
           echo "vp ${{ matrix.vp }} on ${{ matrix.os }}: $fails/5 runs hit 'Failed to forward task process output'" | tee -a "$GITHUB_STEP_SUMMARY"

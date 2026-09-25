@@ -11,7 +11,7 @@ When vp's stdout is a pipe whose reader lags, forwarding `noisy`'s output fails 
 
 ## Reproduce locally
 
-Prerequisites: Node 24 and npm, on macOS or Linux. No other setup.
+Prerequisites: Node 24 and npm, on macOS or Linux. No other setup. The steps call `./node_modules/.bin/vp` rather than `npx vp`: vite-plus 0.2.9 writes a `devEngines` npm pin into `package.json` on first run, and `npx` then refuses to start on a different npm version.
 
 1. Clone and install:
    ```sh
@@ -25,11 +25,11 @@ Prerequisites: Node 24 and npm, on macOS or Linux. No other setup.
    ```
 3. Run both tasks with a stdout reader that lags, like a CI log pipe. The `sleep` stands in for the lagging reader:
    ```sh
-   npx vp run -r go 2>&1 | (sleep 5; cat > /dev/null)
+   ./node_modules/.bin/vp run -r go 2>&1 | (sleep 5; cat > /dev/null)
    ```
 4. Read the result:
    ```sh
-   npx vp run --last-details
+   ./node_modules/.bin/vp run --last-details
    ```
 
 **Expected:** one task shows `✗ Error: Failed to forward task process output: Resource temporarily unavailable (os error 35)` (macOS; `os error 11` on Linux), and `holder#go` shows `✗ (exit code: 137)`. Repeat steps 2–4 to see it again; it failed every time for us.
@@ -38,9 +38,9 @@ Prerequisites: Node 24 and npm, on macOS or Linux. No other setup.
 
 | Command | Result |
 |---|---|
-| `npx vp run --filter noisy go 2>&1 \| (sleep 5; cat > /dev/null)` | passes: no stdout-inheriting Node task |
-| `npx vp run -r go > out.log 2>&1` | passes: a regular file never returns `EAGAIN` |
-| `npx vp run -r go` in a terminal | passes: a TTY drains immediately |
+| `./node_modules/.bin/vp run --filter noisy go 2>&1 \| (sleep 5; cat > /dev/null)` | passes: no stdout-inheriting Node task |
+| `./node_modules/.bin/vp run -r go > out.log 2>&1` | passes: a regular file never returns `EAGAIN` |
+| `./node_modules/.bin/vp run -r go` in a terminal | passes: a TTY drains immediately |
 
 **Other versions:** install one cleanly, then repeat steps 2–4. npm cannot downgrade in place because of a vitest peer conflict:
 
