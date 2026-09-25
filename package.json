@@ -7,12 +7,5 @@
   ],
   "devDependencies": {
     "vite-plus": "^1.0.0-rc.0"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "npm",
-      "version": "12.1.0",
-      "onFail": "download"
-    }
   }
 }
